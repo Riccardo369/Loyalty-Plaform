@@ -129,12 +129,18 @@ class PianoFedeltà extends PianoVantaggi{
 
     public boolean RequestSetData(float PuntiPercentual, float PuntiPercentualVIP, float LivelliPercentual, float LivelliPercentualVIP, boolean Recensione, boolean Prenotazione, boolean Coupon, boolean ModuloReffeal){
 
+        if(PuntiPercentual > 1 || PuntiPercentual < 0 ||
+                PuntiPercentualVIP > 1 || PuntiPercentualVIP < 0 ||
+                LivelliPercentual > 1 || LivelliPercentual < 0 ||
+                LivelliPercentualVIP > 1 || LivelliPercentualVIP < 0) return false;
+
+
         String[] Campi = {"", "", "", "", "", "", "", ""};
 
         if(this.PuntiPercentual != PuntiPercentual) Campi[0] = "PuntiPercentual = '"+PuntiPercentual+"'";
         if(this.PuntiPercentualVIP != PuntiPercentualVIP) Campi[1] = "PuntiPercentualVIP = '"+PuntiPercentualVIP+"'";
-        if(this.LivelliPercentual != LivelliPercentual) Campi[2] = "PuntiPercentual = '"+PuntiPercentual+"'";
-        if(this.LivelliPercentualVIP != LivelliPercentualVIP) Campi[3] = "PuntiPercentualVIP = '"+PuntiPercentualVIP+"'";
+        if(this.LivelliPercentual != LivelliPercentual) Campi[2] = "PuntiLivelloPercentual = '"+LivelliPercentual+"'";
+        if(this.LivelliPercentualVIP != LivelliPercentualVIP) Campi[3] = "PuntiLivelloPercentualVIP = '"+LivelliPercentualVIP+"'";
         if(this.Recensione != Recensione) Campi[4] = "Recensione = "+String.valueOf(Recensione)+"";
         if(this.Prenotazione != Prenotazione) Campi[5] = "Prenotazione = "+String.valueOf(Prenotazione)+"";
         if(this.VantaggioCoupon != Coupon) Campi[6] = "Coupon = "+String.valueOf(Coupon)+"";
@@ -166,12 +172,14 @@ class PianoFedeltà extends PianoVantaggi{
         //Modifico sia i dati di questa azienda, e sia le partite IVA di tutti gli elementi associati all' azienda (Dipendenti, Coupon, MoudliReffeal, ...)
         UserDatabaseRequest.SendRequest("update piano_vantaggi set "+Requests+" where PartitaIVAStart = '"+this.StartPartitaIVA+"' and PartitaIVAFinish = '"+this.FinishPartitaIVA+"'");
 
+        //System.out.println(UserDatabaseRequest.GetLastExecuteDone());
+
         if(UserDatabaseRequest.GetLastExecuteDone()){
 
             this.PuntiPercentual = PuntiPercentual;
             this.PuntiPercentualVIP = PuntiPercentualVIP;
-            this.LivelliPercentual = PuntiPercentual;
-            this.LivelliPercentualVIP = PuntiPercentualVIP;
+            this.LivelliPercentual = LivelliPercentual;
+            this.LivelliPercentualVIP = LivelliPercentualVIP;
             this.Recensione = Recensione;
             this.Prenotazione = Prenotazione;
             this.VantaggioCoupon = Coupon;

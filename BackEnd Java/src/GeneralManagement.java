@@ -164,7 +164,8 @@ public class GeneralManagement {
                 PuntiPercentualVIP < 0 || PuntiPercentualVIP > 1 ||
                 PuntiLivelloPercentual < 0 || PuntiLivelloPercentual > 1 ||
                 PuntiPercentualVIP < 0 || PuntiPercentualVIP > 1 ||
-                PercentualBase < 0 || PercentualBase > 1) return false;
+                PercentualBase < 0 || PercentualBase > 1 ||
+                PartitaIVAStart.equals(PartitaIVAFinish)) return false;
 
         if(Scadenza.compareTo(new Timestamp(System.currentTimeMillis())) < 0) return false;
 
@@ -189,7 +190,7 @@ public class GeneralManagement {
                 "insert into cassetta_collaborazioni (PartitaIVARichiedente, PartitaIVARicevente, AccettazioneRicevente) VALUES " +
                         "('"+PartitaIVAStart+"', '"+PartitaIVAFinish+"', null)"});
 
-        return true;
+        return UserDatabaseRequest.GetLastExecuteDone();
     }
     public static final Collaborazione GetCollaborazione(String PartitaIVAStart, String PartitaIVAFinish) {
         try{ return new Collaborazione(PartitaIVAStart, PartitaIVAFinish); }
@@ -208,23 +209,36 @@ public class GeneralManagement {
 
     }
 
-    //Metodo che ogni volta che viene richiamato, elimina le collaborazioni scadute dal Database
+    //Metodo che ogni volta che viene richiamato, elimina le collaborazioni scadute dal Database ed elimina la richieste di collaborazione già accettate / rifiutate
     public static final boolean DestroyCollaborazioniScadute(){
         DatabaseQuery[] Responses = UserDatabaseRequest.SendTransaction(new String[]{
-                "select PartitaIVAStart, PartitaIVAFinish, Scadenza from piano_vantaggi",
+                "select PartitaIVAStart, PartitaIVAFinish, Scadenza from piano_vantaggi where PartitaIVAStart <> PartitaIVAFinish",
                 "select PartitaIVARichiedente, PartitaIVARicevente from cassetta_collaborazioni where AccettazioneRicevente = false"
         });
 
         ArrayList<String> Result = new ArrayList<>();
 
-        for(int i=0; i<Responses[0].GetRowCount(); i++)
-            if(Timestamp.valueOf(Responses[0].GetValue(i, "Scadenza")).compareTo(new Timestamp(System.currentTimeMillis())) < 0) Result.add("(PartitaIVAStart = '"+Responses[0].GetValue(i, "PartitaIVAStart")+"' and PartitaIVAFinish = '"+Responses[0].GetValue(i, "PartitaIVAFinish")+"')");
+        //Mi prendo le richieste scadute
+        for(int i=0; i<Responses[0].GetRowCount(); i++) {
 
-        String s;
+            //if(Responses[0].GetValue(i, "Scadenza") == null) continue;
+            if(Timestamp.valueOf(Responses[0].GetValue(i, "Scadenza")).compareTo(new Timestamp(System.currentTimeMillis())) < 0){
+                Result.add("(PartitaIVAStart = '" + Responses[0].GetValue(i, "PartitaIVAStart") + "' and PartitaIVAFinish = '" + Responses[0].GetValue(i, "PartitaIVAFinish") + "')");
+                Result.add("(PartitaIVAStart = '" + Responses[0].GetValue(i, "PartitaIVAFinish") + "' and PartitaIVAFinish = '" + Responses[0].GetValue(i, "PartitaIVAStart") + "')");
+            }
+        }
+
+        //Mi prendo le richieste rifiutate
+        String s, s1;
         for(int i=0; i<Responses[1].GetRowCount(); i++){
 
-            s = "(PartitaIVAStart = '"+Responses[0].GetValue(i, "PartitaIVAStart")+"' and PartitaIVAFinish = '"+Responses[0].GetValue(i, "PartitaIVAFinish")+"')";
-            if(!Result.contains(s)) Result.add(s);
+            s = "(PartitaIVAStart = '"+Responses[1].GetValue(i, "PartitaIVARichiedente")+"' and PartitaIVAFinish = '"+Responses[1].GetValue(i, "PartitaIVARicevente")+"')";
+            s1 = "(PartitaIVAStart = '"+Responses[1].GetValue(i, "PartitaIVARicevente")+"' and PartitaIVAFinish = '"+Responses[1].GetValue(i, "PartitaIVARichiedente")+"')";
+
+            if(!Result.contains(s)){
+                Result.add(s);
+                Result.add(s1);
+            }
 
         }
 
@@ -236,8 +250,11 @@ public class GeneralManagement {
             if(i < Result.size()-1) Stringa += " or ";
         }
 
-        UserDatabaseRequest.SendTransaction(new String[]{"delete from piano_vantaggi where "+Stringa,
-                "delete from cassetta_collaborazioni where AccettazioneRicevente = false or AccettazioneRicevente = true"});
+        //Qui cancello le richieste rifiutate
+        if(Responses[1].GetRowCount() == 0) UserDatabaseRequest.SendRequest("delete from cassetta_collaborazioni where AccettazioneRicevente = false or AccettazioneRicevente = true");
+
+        else UserDatabaseRequest.SendTransaction(new String[]{"delete from piano_vantaggi where "+Stringa,
+                    "delete from cassetta_collaborazioni where AccettazioneRicevente = false or AccettazioneRicevente = true"});
 
         return UserDatabaseRequest.GetLastExecuteDone();
     }
@@ -253,11 +270,8 @@ public class GeneralManagement {
         }
         catch(IllegalArgumentException e){
 
-            DatabaseQuery[] Response = UserDatabaseRequest.SendTransaction(new String[]{
-                    "select Recensione from piano_vantaggi where PartitaIVAStart = '"+PartitaIVA+"' and PartitaIVAFinish = '"+PartitaIVA+"'",
-                    "select StatoVIP from utente where Nickname ='"+Nickname+"'"});
-
-            if(Response[0].GetRowCount() == 0 || Response[0].GetRowCount() == 0 || Response[0].GetValue(0, "Recensione").equals("0")) return false;
+            DatabaseQuery Response = UserDatabaseRequest.SendRequest("select SitoWeb from azienda where PartitaIVA = '"+PartitaIVA+"'");
+            if(Response.GetRowCount() == 0) return false;
 
             UserDatabaseRequest.SendRequest("insert into recensione_sito (PartitaIVA, Nickname, Descrizione, Stelle, MomentoTemporale) VALUES " +
                     "('"+PartitaIVA+"', '"+Nickname+"', '"+Descrizione+"', "+Stelle+", '"+TemporalPoint.toString()+"')");

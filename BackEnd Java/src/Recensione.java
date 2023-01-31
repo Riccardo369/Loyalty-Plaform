@@ -39,6 +39,9 @@ public class Recensione {
     public Timestamp getTimeStamp() { return TimeStamp; }
 
     public boolean equals(Object o){
+
+        if(o == null) return false;
+
         if(this == o) return true;
 
         Recensione A = (Recensione) o;

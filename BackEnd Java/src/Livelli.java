@@ -59,9 +59,12 @@ public class Livelli {
 			if(i < this.Levels.size()-1) levels += ", ";
 		}
 
-		UserDatabaseRequest.SendTransaction(new String[]{
-				"delete from livelli where PartitaIVAStart = '"+PartitaIVAStart+"' and PartitaIVAFinish = '"+PartitaIVAFinish+"'",
-				"insert into livelli (PartitaIVAStart, PartitaIVAFinish, PointsNextLivello, AumentoSconto, AumentoScontoVIP) VALUES "+levels});
+		if(this.Levels.size() == 0) UserDatabaseRequest.SendRequest("delete from livelli where PartitaIVAStart = '" + PartitaIVAStart + "' and PartitaIVAFinish = '" + PartitaIVAFinish + "'");
+		else {
+			UserDatabaseRequest.SendTransaction(new String[]{
+					"delete from livelli where PartitaIVAStart = '" + PartitaIVAStart + "' and PartitaIVAFinish = '" + PartitaIVAFinish + "'",
+					"insert into livelli (PartitaIVAStart, PartitaIVAFinish, PointsNextLivello, AumentoSconto, AumentoScontoVIP) VALUES " + levels});
+		}
 
 		return UserDatabaseRequest.GetLastExecuteDone();
 	}

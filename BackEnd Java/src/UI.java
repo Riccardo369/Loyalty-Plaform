@@ -1,4 +1,3 @@
-import java.nio.charset.Charset;
 import java.sql.Timestamp;
 import java.util.Random;
 import java.util.Scanner;
@@ -9,10 +8,6 @@ public class UI {
     static Azienda azienda = null;
     static Dipendente dipendente = null;
     static String[] Fields;
-
-    //static int i, r, f;
-
-    static float k;
 
     public static void main(String[] args){
 
@@ -97,7 +92,6 @@ public class UI {
 
         return Result;
     }
-
     private static String[] CompileForm(String Title, String[] Fields){
 
         System.out.println(Title);
@@ -117,14 +111,29 @@ public class UI {
 
         return Result;
     }
+    private static String NewRandomCode(int len){
+
+        char[] Characters = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v' ,'w', 'y', 'z'};
+        Random random = new Random();
+        char[] Result = new char[len];
+
+        for(int i=0; i<len; i++) Result[i] = Characters[random.nextInt(Characters.length)];
+
+        return String.valueOf(Result);
+    }
 
     public static boolean RegisterUtente(){
 
         Fields = UI.CompileForm("Registrazione utente", new String[]{
                 "Nome", "Cognome", "Numero di telefono", "Città", "Età (in numeri)", "Regione", "Comune",
                 "Sei maschio (1 = si/altro = no)?", "Email", "Nickname", "Password",
-                "Se accetti, i tuoi dati VERRANNO INVIATI ad altre aziende SOLO per PROPORTI NUOVI PRODOTTI. Accetti (1 = si/altro = no)?"
+                "Se accetti, i tuoi dati (tranne la password e Nickname) VERRANNO INVIATI ad altre aziende SOLO per PROPORTI NUOVI PRODOTTI. Accetti (1 = si/altro = no)?"
         });
+
+        //Se non ho inserito nessun dato
+        String S = "";
+        for(String s: Fields) S += s;
+        if(S.equals("")) return true;
 
         String[] Codici = UserDatabaseRequest.SendRequest("select CodiceCarta from utente").GetColumn("CodiceCarta");
 
@@ -136,9 +145,7 @@ public class UI {
         //Continuo a generare codici finchè non ne trovo uno nuovo
         while(search){
 
-            array = new byte[100];
-            new Random().nextBytes(array);
-            NuovoCodice = new String(array, Charset.forName("UTF-8"));
+            NuovoCodice = UI.NewRandomCode(100);
 
             search = false;
 
@@ -161,13 +168,19 @@ public class UI {
         catch(Exception e){}
 
         System.out.println("Dati errati od utente già presente");
-
         return false;
+
     }
     public static boolean RegisterAzienda(){
+
         Fields = UI.CompileForm("Registrazione punto vendita", new String[]{
                 "Nome", "Partita IVA", "Email", "Link del tuo sito Web", "Password"
         });
+
+        //Se non ho inserito nessun dato
+        String S = "";
+        for(String s: Fields) S += s;
+        if(S.equals("")) return true;
 
         if(GeneralManagement.AddAzienda(Fields[0], Fields[1], Fields[4], Fields[3], Fields[2])){
 
@@ -181,9 +194,15 @@ public class UI {
         return false;
     }
     public static boolean RegisterDipendente(){
-        Fields = UI.CompileForm("Registrazione punto vendita", new String[]{
-                "Nome", "Cognome", "Creati un tuo codice", "Email", "Partita IVA del punto vendita in cui lavori", "Numero di telefono", "Password"
+
+        Fields = UI.CompileForm("Registrazione dipendente", new String[]{
+                "Nome", "Cognome", "Email", "Partita IVA del punto vendita in cui lavori", "Numero di telefono", "Password"
         });
+
+        //Se non ho inserito nessun dato
+        String S = "";
+        for(String s: Fields) S += s;
+        if(S.equals("")) return true;
 
         String[] Codici = UserDatabaseRequest.SendRequest("select CodiceDipendente from dipendente").GetColumn("CodiceDipendente");
 
@@ -195,9 +214,7 @@ public class UI {
         //Continuo a generare codici finchè non ne trovo uno nuovo
         while(search){
 
-            array = new byte[100];
-            new Random().nextBytes(array);
-            NuovoCodice = new String(array, Charset.forName("UTF-8"));
+            NuovoCodice = UI.NewRandomCode(5);
 
             search = false;
 
@@ -207,14 +224,17 @@ public class UI {
             }
         }
 
-        if(GeneralManagement.AddDipendente(Fields[0], Fields[1], Fields[3], Fields[4], Fields[6], NuovoCodice, Fields[5])){
+        if(GeneralManagement.AddDipendente(Fields[0], Fields[1], Fields[2], Fields[3], Fields[5], NuovoCodice, Fields[4])){
 
-            dipendente = GeneralManagement.GetDipendente(Fields[2], Fields[4], Fields[6]);
+            dipendente = GeneralManagement.GetDipendente(NuovoCodice, Fields[3], Fields[5]);
+
+            System.out.println("Dipendente inserito con successo, il tuo codice dipendente è: ("+NuovoCodice+")");
+
             return true;
 
         }
 
-        System.out.println("Dati errati o dipendente già presente");
+        System.out.println("Dati errati o dipendente già presente, oppure azienda non esistente");
 
         return false;
     }
@@ -226,9 +246,15 @@ public class UI {
                 "Password"});
 
         utente = GeneralManagement.GetUtente(Fields[0], Fields[1]);
-        if(utente != null) System.out.println("Bentornato "+utente.getNome()+" "+utente.getCognome()+" detto anche '"+utente.getNickname()+"'");
-        else System.out.println("Questo utente non esiste");
-        return false;
+        if(utente != null){
+            System.out.println("Bentornato "+utente.getNome()+" "+utente.getCognome()+" detto anche '"+utente.getNickname()+"'");
+            return true;
+        }
+        else{
+            System.out.println("Questo utente non esiste");
+            return false;
+        }
+
     }
     public static boolean LoginAzienda(){
         Fields = UI.CompileForm("Identificazione Punto vendita", new String[]{
@@ -236,9 +262,15 @@ public class UI {
                 "Password"});
 
         azienda = GeneralManagement.GetAzienda(Fields[0], Fields[1]);
-        if(azienda != null) System.out.println("Punto vendita ("+utente.getNickname()+") identificato");
-        else System.out.println("Questo punto vendita non esiste");
-        return false;
+        if(azienda != null){
+            System.out.println("Punto vendita ("+azienda.getPartitaIVA()+") identificato\n");
+            return true;
+        }
+
+        else{
+            System.out.println("Questo punto vendita non esiste\n");
+            return false;
+        }
     }
     public static boolean LoginDipendente(){
 
@@ -248,9 +280,14 @@ public class UI {
                 "Password"});
 
         dipendente = GeneralManagement.GetDipendente(Fields[1], Fields[0], Fields[2]);
-        if(dipendente != null) System.out.println("Bentornato al lavoro "+dipendente.getNome()+" "+dipendente.getCognome());
-        else System.out.println("Questo dipendente non è registrato come lavoratore di questo punto vendita ("+dipendente.getPartitaIVA()+")");
-        return false;
+        if(dipendente != null){
+            System.out.println("Bentornato al lavoro "+dipendente.getNome()+" "+dipendente.getCognome());
+            return true;
+        }
+        else{
+            System.out.println("Questo dipendente non è registrato come lavoratore di questo punto vendita oppure i dati sono errati");
+            return false;
+        }
     }
 
     public static void DeleteUtente(){
@@ -269,7 +306,7 @@ public class UI {
                 "Password"});
 
         if(GeneralManagement.RemoveAzienda(Fields[0], Fields[1])) System.out.println("Punto vendita cancellato");
-        else System.out.println("Punto vendita non esiste");
+        else System.out.println("Questo punto vendita non esiste");
     }
     public static void DeleteDipendente(){
 
@@ -285,18 +322,30 @@ public class UI {
     public static boolean AggiuntaClientiDipendente(){
 
         System.out.println("Ora aggiungi i dati per il cliente");
-        return RegisterUtente();
-    }
-    public static boolean RecensioneUtente(){
 
-        Fields = UI.CompileForm("Recensione sito dall' utente "+utente.getNickname(), new String[]{
+        boolean Result = RegisterUtente();
+
+        if(Result) System.out.println("Nuovo utente registrato con successo");
+        else System.out.println("Fallimento nella registrazioen del nuovo utente");
+
+        return Result;
+    }
+    public static boolean RecensioneUtente() {
+
+        Fields = UI.CompileForm("Recensione sito dall' utente " + utente.getNickname(), new String[]{
                 "PartitaIVA",
                 "Descrizione",
                 "Stelle"});
 
-        try{ return GeneralManagement.AddRecensioneSito(Fields[0], utente.getNickname(), Fields[1], Float.parseFloat(Fields[2]), new Timestamp(System.currentTimeMillis())); }
-        catch(Exception e){ return false; }
+        boolean Result = false;
 
+        try { Result = GeneralManagement.AddRecensioneSito(Fields[0], utente.getNickname(), Fields[1], ((float) Integer.parseInt(Fields[2])), new Timestamp(System.currentTimeMillis())); }
+        catch(Exception e){ Result = false; }
+
+        if(Result) System.out.println("Recensione rilasciata con successo");
+        else System.out.println("Problemi nel rilasciare la recensione");
+
+        return Result;
     }
     public static boolean GestioneDatiUtente(){
         Fields = UI.CompileForm("Modifica dei dati dell' utente (se non vuoi modificare il parametro, basta premere Invio) "+utente.getNickname(), new String[]{
@@ -308,8 +357,8 @@ public class UI {
                 "Regione (Actual = '"+utente.getRegione()+"')",
                 "Comune (Actual = '"+utente.getComune()+"')",
                 "Sei maschio (1 = si/altro = no)? (Actual sei un maschio = "+utente.getMale()+")",
-                "Email (Actual = "+utente.getEmail()+")",
-                "Nickname (Actual = "+utente.getNickname()+")",
+                "Email (Actual = '"+utente.getEmail()+"')",
+                "Nickname (Actual = '"+utente.getNickname()+"')",
                 "Accettazione (1 = si/altro = no)? (Al momento hai accettato = "+utente.getConsensoDati()+")"});
 
         //Sistemo la situazione, controllando quali sono quelli uguali e quelli no
@@ -325,14 +374,24 @@ public class UI {
         if(Fields[9].equals("")) Fields[9] = utente.getNickname();
         if(Fields[10].equals("")) Fields[10] = String.valueOf(utente.getConsensoDati());
 
-        return utente.RequestSetData(Fields[9], Fields[0], Fields[1], Fields[2], Fields[8], utente.getStatoVIP(), utente.getCodiceCarta(), Fields[3], Integer.parseInt(Fields[4]), Fields[5], Fields[6], Boolean.parseBoolean(Fields[7]), Boolean.parseBoolean(Fields[10]));
+        boolean Result = false;
+
+        try{
+            Result = utente.RequestSetData(Fields[9], Fields[0], Fields[1], Fields[2], Fields[8], utente.getStatoVIP(), utente.getCodiceCarta(), Fields[3], Integer.parseInt(Fields[4]), Fields[5], Fields[6], Boolean.parseBoolean(Fields[7]), Boolean.parseBoolean(Fields[10]));
+
+            if(Result) System.out.println("Aggiornamento dati effettuato con successo");
+            else System.out.println("Fallimento nell' aggiornamento dei dati");
+        }
+        catch(Exception e){ System.out.println("Fallimento nell' aggiornamento dei dati"); }
+
+        return Result;
     }
     public static boolean GestioneDatiAzienda(){
         Fields = UI.CompileForm("Modifica dei dati dell' azienda (se non vuoi modificare il parametro, basta premere Invio) "+azienda.getPartitaIVA(), new String[]{
                 "Nome azienda (Actual = '"+azienda.getNomeAzienda()+"')",
                 "Partita IVA (Actual = '"+azienda.getPartitaIVA()+"')",
                 "Sito web (Actual = '"+azienda.getSitoWeb()+"')",
-                "Email (Actual = "+azienda.getEmail()+")"
+                "Email (Actual = '"+azienda.getEmail()+"')"
         });
 
         //Sistemo la situazione, controllando quali sono quelli uguali e quelli no
@@ -341,82 +400,116 @@ public class UI {
         if(Fields[2].equals("")) Fields[2] = azienda.getSitoWeb();
         if(Fields[3].equals("")) Fields[3] = azienda.getEmail();
 
-        return azienda.RequestSetData(Fields[0], Fields[1], Fields[2], Fields[3]);
+        boolean Result = azienda.RequestSetData(Fields[0], Fields[1], Fields[2], Fields[3]);
+
+        if(Result) System.out.println("Aggiornamento dei dati effettuato con successo");
+        else System.out.println("Fallimento nell' aggiornamento dei dati");
+
+        return Result;
     }
 
     //Valido per tutte e 3 le categorie (utente, dipendente, punto vendita)
     public static boolean ResetPassword(){
 
+        boolean Result = false;
+
         if(utente != null) {
 
             Fields = UI.CompileForm("Modifica password dell' utente "+utente.getNickname(), new String[]{"Nuova Password"});
-            return utente.RequestSetPassword(Fields[0]);
+            Result = utente.RequestSetPassword(Fields[0]);
 
         }
 
         else if(dipendente != null) {
 
             Fields = UI.CompileForm("Modifica password del dipendente "+dipendente.getCodiceDipendente()+" che lavora nel punto vendita "+dipendente.getPartitaIVA(), new String[]{"Nuova Password"});
-            return dipendente.RequestSetPassword(Fields[0]);
+            Result = dipendente.RequestSetPassword(Fields[0]);
 
         }
         else if(azienda != null) {
 
             Fields = UI.CompileForm("Modifica password del punto vendita "+azienda.getPartitaIVA(), new String[]{"Nuova Password"});
-            return azienda.RequestSetPassword(Fields[0]);
+            Result =  azienda.RequestSetPassword(Fields[0]);
         }
 
-        return false;
+        if(Result) System.out.println("Aggiornamento password eseguito con successo");
+        else System.out.println("Fallimento nell' aggiornamento della password");
+
+        return Result;
 
     }
 
     public static boolean AddCollaborazioneAzienda(){
 
-        Fields = UI.CompileForm("Aggiungi una collaborazione: "+utente.getNickname(), new String[]{
+        Fields = UI.CompileForm("Aggiungi una collaborazione: "+azienda.getPartitaIVA(), new String[]{
                 "A quale partita IVA inviare la collaborazione",
                 "Percentuale punti base",
                 "Percentuale punti VIP",
                 "Percentuale punti livello base",
                 "Percentuale punti livello VIP",
                 "Percentuale di Cash",
-                "Inserire la data di scadenza di questa collaborazione"});
+                "Inserire la data di scadenza di questa collaborazione (anno-mese-giorno ora:minuto:secondo)"});
 
-        return GeneralManagement.AddCollaborazione(azienda.getPartitaIVA(), Fields[0], Float.parseFloat(Fields[1]), Float.parseFloat(Fields[2]), Float.parseFloat(Fields[3]), Float.parseFloat(Fields[4]), Float.parseFloat(Fields[5]), Timestamp.valueOf(Fields[6]));
+        boolean Result = false;
 
+        try{ Result = GeneralManagement.AddCollaborazione(azienda.getPartitaIVA(), Fields[0], Float.parseFloat(Fields[1]), Float.parseFloat(Fields[2]), Float.parseFloat(Fields[3]), Float.parseFloat(Fields[4]), Float.parseFloat(Fields[5]), Timestamp.valueOf(Fields[6])); }
+        catch(Exception e){ Result = false; }
+
+
+        if(Result) System.out.println("Collaborazione aggiunta con successo");
+        else System.out.println("Fallimento nell' aggiungere una nuova collaborazione");
+
+        return Result;
     }
     public static boolean AcceptCollaborazionAzienda(){
 
         int i, r;
 
-        DatabaseQuery AttesaCollaborazioni = UserDatabaseRequest.SendRequest("select cc.PartitaIVARichiedente, pv.PuntiPercentual, pv.PuntiPercentualVIP, pv.PuntiLivelloPercentual, pv.PuntiLivelloPercentualVIP, pv.PercentualBase from cassetta_collaborazioni as cc inner join piano_vantaggi as pv on cc.PartitaIVARichiedente = pv.PartitaIVAStart where cc.PartitaIVARicevente = '"+azienda.getPartitaIVA()+"' and AccettazioneRicevente == null");
+        DatabaseQuery AttesaCollaborazioni = UserDatabaseRequest.SendRequest("select cc.PartitaIVARichiedente, pv.PuntiPercentual, pv.PuntiPercentualVIP, pv.PuntiLivelloPercentual, pv.PuntiLivelloPercentualVIP, pv.PercentualBase from cassetta_collaborazioni as cc inner join piano_vantaggi as pv on cc.PartitaIVARichiedente = pv.PartitaIVAStart where cc.PartitaIVARicevente = '"+azienda.getPartitaIVA()+"' and pv.PercentualBase <> 1");
 
         System.out.println("Collaborazioni in attesa ("+AttesaCollaborazioni.GetRowCount()+")");
 
+        if(AttesaCollaborazioni.GetRowCount() > 0) {
 
-        for(int k=0; k<AttesaCollaborazioni.GetRowCount(); k++){
 
-            System.out.println((k+1)+"° Collaborazione proposta da "+AttesaCollaborazioni.GetValue(k, "cc.PartitaIVARichiedente"));
-            System.out.println("Percentuale punti di base: "+AttesaCollaborazioni.GetValue(k, "pv.PuntiPercentual"));
-            System.out.println("Percentuale punti VIP: "+AttesaCollaborazioni.GetValue(k, "pv.PuntiPercentualVIP"));
-            System.out.println("Percentuale punti dei livelli di base: "+AttesaCollaborazioni.GetValue(k, "pv.PuntiLivelloPercentual"));
-            System.out.println("Percentuale punti dei livelli VIP: "+AttesaCollaborazioni.GetValue(k, "pv.PuntiLivelloPercentualVIP"));
-            System.out.println("Percentuale di guadagno di base: "+AttesaCollaborazioni.GetValue(k, "pv.PercentualBase"));
+            for (int k = 0; k < AttesaCollaborazioni.GetRowCount(); k++) {
 
+                System.out.println((k + 1) + "° Collaborazione proposta da " + AttesaCollaborazioni.GetValue(k, "PartitaIVARichiedente"));
+                System.out.println("Percentuale punti di base: " + AttesaCollaborazioni.GetValue(k, "PuntiPercentual"));
+                System.out.println("Percentuale punti VIP: " + AttesaCollaborazioni.GetValue(k, "PuntiPercentualVIP"));
+                System.out.println("Percentuale punti dei livelli di base: " + AttesaCollaborazioni.GetValue(k, "PuntiLivelloPercentual"));
+                System.out.println("Percentuale punti dei livelli VIP: " + AttesaCollaborazioni.GetValue(k, "PuntiLivelloPercentualVIP"));
+                System.out.println("Percentuale di guadagno di base: " + AttesaCollaborazioni.GetValue(k, "PercentualBase"));
+                System.out.println("");
+
+            }
+
+            i = UI.Choice("Scegli a quale partita IVA accettare o rifiutare la collaborazione (sono messe in ordine come sopra)", AttesaCollaborazioni.GetColumn("PartitaIVARichiedente"));
+
+            r = UI.Choice("Scegli se accettare o rifiutare la collaborazione proposta da" + AttesaCollaborazioni.GetValue(i, "PartitaIVARichiedente"), new String[]{"Accettare", "Rifiutare"});
+
+            if (r == 0) UserDatabaseRequest.SendRequest("update cassetta_collaborazioni set AccettazioneRicevente = true where PartitaIVARichiedente = '" + AttesaCollaborazioni.GetValue(i, "PartitaIVARichiedente") + "' and PartitaIVARicevente = '" + azienda.getPartitaIVA() + "'");
+            if (r == 1) UserDatabaseRequest.SendRequest("update cassetta_collaborazioni set AccettazioneRicevente = false where PartitaIVARichiedente = '" + AttesaCollaborazioni.GetValue(i, "PartitaIVARichiedente") + "' and PartitaIVARicevente = '" + azienda.getPartitaIVA() + "'");
+
+            boolean Result = UserDatabaseRequest.GetLastExecuteDone();
+
+            if (Result) System.out.println("Collaborazione accettata/rifiutata con successo");
+            else System.out.println("Fallimento nell' accettazione della collaborazione");
+
+            GeneralManagement.DestroyCollaborazioniScadute();
+
+            //UserDatabaseRequest.SendRequest("delete casset")
+
+            return Result;
         }
 
-        i = UI.Choice("Scegli a quale partita IVA accettare o rifiutare la collaborazione (sono messe in ordine come sopra)", AttesaCollaborazioni.GetColumn("pv.PartitaIVARichiedente"));
-
-        r = UI.Choice("Scegli se accettare o rifiutare la collaborazione proposta da"+AttesaCollaborazioni.GetValue(i, "cc.PartitaIVARichiedente"), new String[]{"Accettare", "Rifiutare"});
-
-        if(r == 0) UserDatabaseRequest.SendRequest("update cassetta_collaborazione set AccettazioneRicevente = true where PartitaIVARichiedente = '"+AttesaCollaborazioni.GetValue(i, "pv.PartitaIVARichiedente")+"' and PartitaIVARicevente = '"+azienda.getPartitaIVA()+"'");
-
-        if(r == 1) UserDatabaseRequest.SendRequest("update cassetta_collaborazione set AccettazioneRicevente = false where PartitaIVARichiedente = '"+AttesaCollaborazioni.GetValue(i, "pv.PartitaIVARichiedente")+"' and PartitaIVARicevente = '"+azienda.getPartitaIVA()+"'");
-
-        return UserDatabaseRequest.GetLastExecuteDone();
+        return true;
     }
     public static void ModificaPianoFedeltà() {
 
         int i, r, f;
+        
+        float k;
 
         PianoFedeltà Piano = new PianoFedeltà(azienda.getPartitaIVA());
 
@@ -425,13 +518,13 @@ public class UI {
 
         while (true) {
 
-            LevelActive = Piano.getLivelliPercentual() == 0 && Piano.getPuntiPercentualVIP() == 0;
-            ScontoActive = Piano.getPuntiPercentual() == 0 && Piano.getPuntiPercentualVIP() == 0;
+            LevelActive = !(Piano.getLivelliPercentual() == 0.0f && Piano.getLivelliPercentualVIP() == 0.0f);
+            ScontoActive = !(Piano.getPuntiPercentual() == 0.0f && Piano.getPuntiPercentualVIP() == 0.0f);
 
             i = Choice("Scegli quale parte del piano fedeltà cambiare", new String[]{
                     "Indietro",
                     "Piano livelli (" + Piano.livelli.GetLevelsCount() + " livelli con un normale aumento dei punti di " + Piano.getLivelliPercentual() + " e aumento VIP di " + Piano.getLivelliPercentualVIP() + " attualmente attivo = " + LevelActive + ")",
-                    "Piano Sconto di base (con uno sconto di base normale di " + Piano.getPuntiPercentual() + " ed uno sconto VIP di " + Piano.getPuntiPercentualVIP() + ", " + ScontoActive + ")",
+                    "Piano Sconto di base (con uno sconto di base normale di " + Piano.getPuntiPercentual() + " ed uno sconto VIP di " + Piano.getPuntiPercentualVIP() + ", attualmente attivo = " + ScontoActive + ")",
                     "Piano Recensione (Attualmente abilitata = " + Piano.getRecensione() + ")",
                     "Piano Prenotazione (Attualmente abilitata = " + Piano.getPrenotazione() + ")",
                     "Piano Gestione Coupon (Attualmente abilitato = " + Piano.getVantaggioCoupon() + ")",
@@ -449,7 +542,7 @@ public class UI {
                         System.out.println("Livelli attuali\n");
 
                         //Stampo i livelli presenti
-                        for (int k = 0; k < Piano.livelli.GetLevelsCount(); k++) System.out.println((k + 1) + "° livello: " + Piano.livelli.GetLivello(k));
+                        for (int a = 0; a < Piano.livelli.GetLevelsCount(); a++) System.out.println((a + 1) + "° livello: " + Piano.livelli.GetLivello(a));
 
                         r = Choice("\nCosa vuoi fare?", new String[]{
                                 "Indietro",
@@ -460,42 +553,37 @@ public class UI {
                                 "Aggiungere un livello"
                         });
 
-                        if (r == 0) break;
+                        if(r == 0) break;
 
-                        else if (r == 1) Piano.RequestSetData(Piano.getPuntiPercentual(), Piano.getPuntiPercentualVIP(), 0, 0, Piano.getRecensione(), Piano.getPrenotazione(), Piano.getVantaggioCoupon(), Piano.getVantaggioModuloReffeal());
+                        else if(r == 1) Piano.RequestSetData(Piano.getPuntiPercentual(), Piano.getPuntiPercentualVIP(), 0.0f, 0.0f, Piano.getRecensione(), Piano.getPrenotazione(), Piano.getVantaggioCoupon(), Piano.getVantaggioModuloReffeal());
 
-                        else if (r == 2) {
+                        else if(r == 2) {
 
                             try {
                                 k = Float.parseFloat(UI.CompileForm("Inserisci la percentuale aumento di livello base", new String[]{"Percentuale di aumento di base"})[0]);
                                 Piano.RequestSetData(Piano.getPuntiPercentual(), Piano.getPuntiPercentualVIP(), k, Piano.getLivelliPercentualVIP(), Piano.getRecensione(), Piano.getPrenotazione(), Piano.getVantaggioCoupon(), Piano.getVantaggioModuloReffeal());
 
-                            } catch (Exception e) {
-                            }
-
+                            } catch (Exception e) {}
                         }
 
-                        else if (r == 3) {
+                        else if(r == 3) {
 
                             try {
                                 k = Float.parseFloat(UI.CompileForm("Inserisci la percentuale aumento di livello base", new String[]{"Percentuale di aumento di base"})[0]);
                                 Piano.RequestSetData(Piano.getPuntiPercentual(), Piano.getPuntiPercentualVIP(), Piano.getLivelliPercentual(), k, Piano.getRecensione(), Piano.getPrenotazione(), Piano.getVantaggioCoupon(), Piano.getVantaggioModuloReffeal());
 
-                            } catch (Exception e) {
-                            }
+                            } catch (Exception e) {}
                         }
 
-                        else if (r == 4) {
+                        else if(r == 4) {
 
                             try {
                                 f = Integer.parseInt(UI.CompileForm("Inserisci quale livello vuoi eliminare (Basandosi sull' indice)", new String[]{"Livello"})[0]);
-                                Piano.livelli.RemoveLevel(f);
-                            } catch (Exception e) {
-                            }
-
+                                Piano.livelli.RemoveLevel(f-1);
+                            } catch (Exception e) {}
                         }
 
-                        else if (r == 5) {
+                        else if(r == 5) {
 
                             try {
                                 Fields = UI.CompileForm("Inserisci i campi del livello che vuoi aggiunger", new String[]{"" +
@@ -504,28 +592,29 @@ public class UI {
                                         "Punti per il nuovo livello"});
 
                                 Piano.livelli.AddLevel(Float.parseFloat(Fields[0]), Float.parseFloat(Fields[1]), Integer.parseInt(Fields[2]));
-                            } catch (Exception e) {
-                            }
-
+                            } catch (Exception e) {}
                         }
 
-                    } else {
+                    }
+
+                    else {
 
                         r = Choice("Cosa vuoi fare?", new String[]{
                                 "Indietro",
                                 "Attivare piano livelli"
                         });
 
-                        if (r == 0) break;
+                        if(r == 0) break;
 
-                        else if (r == 1)
-                            Piano.RequestSetData(Piano.getPuntiPercentual(), Piano.getPuntiPercentualVIP(), 0.1f, 0.1f, Piano.getRecensione(), Piano.getPrenotazione(), Piano.getVantaggioCoupon(), Piano.getVantaggioModuloReffeal());
+                        if(r == 1) Piano.RequestSetData(Piano.getPuntiPercentual(), Piano.getPuntiPercentualVIP(), 0.1f, 0.1f, Piano.getRecensione(), Piano.getPrenotazione(), Piano.getVantaggioCoupon(), Piano.getVantaggioModuloReffeal());
 
                     }
 
                     //Aggiorno sul database ed in locale i livelli
                     Piano.livelli.RequestSetData();
                     Piano.livelli.RequestCurrentData();
+
+                    LevelActive = !(Piano.getLivelliPercentual() == 0.0f && Piano.getLivelliPercentualVIP() == 0.0f);
                 }
             }
 
@@ -545,45 +634,53 @@ public class UI {
 
                         if (r == 0) break;
 
-                        else if (r == 1)
-                            Piano.RequestSetData(0, 0, Piano.getLivelliPercentual(), Piano.getLivelliPercentualVIP(), !Piano.getRecensione(), Piano.getPrenotazione(), Piano.getVantaggioCoupon(), Piano.getVantaggioModuloReffeal());
+                        if (r == 1) Piano.RequestSetData(0.0f, 0.0f, Piano.getLivelliPercentual(), Piano.getLivelliPercentualVIP(), !Piano.getRecensione(), Piano.getPrenotazione(), Piano.getVantaggioCoupon(), Piano.getVantaggioModuloReffeal());
 
-                        else if (r == 2) {
+                        if (r == 2) {
                             try {
                                 k = Float.parseFloat(UI.CompileForm("Inserisci la percentuale di sconto base", new String[]{"Percentuale di sconto di base"})[0]);
                                 Piano.RequestSetData(k, Piano.getPuntiPercentualVIP(), Piano.getLivelliPercentual(), Piano.getLivelliPercentualVIP(), Piano.getRecensione(), Piano.getPrenotazione(), Piano.getVantaggioCoupon(), Piano.getVantaggioModuloReffeal());
 
                             } catch (Exception e) {}
 
-                        } else if (r == 3) {
+                        }
+                        if (r == 3) {
                             try {
                                 k = Float.parseFloat(UI.CompileForm("Inserisci la percentuale di sconto VIP", new String[]{"Percentuale di sconto VIP"})[0]);
                                 Piano.RequestSetData(Piano.getPuntiPercentual(), k, Piano.getLivelliPercentual(), Piano.getLivelliPercentualVIP(), Piano.getRecensione(), Piano.getPrenotazione(), Piano.getVantaggioCoupon(), Piano.getVantaggioModuloReffeal());
                             } catch (Exception e) {}
                         }
-                    } else {
+                    }
+
+                    else {
                         r = Choice("Cosa vuoi fare?", new String[]{
                                 "Indietro",
                                 "Attivare piano sconto"});
 
                         if (r == 0) break;
 
-                        else if (r == 1) Piano.RequestSetData(0.1f, 0.1f, Piano.getLivelliPercentual(), Piano.getLivelliPercentualVIP(), !Piano.getRecensione(), Piano.getPrenotazione(), Piano.getVantaggioCoupon(), Piano.getVantaggioModuloReffeal());
+                        if (r == 1) Piano.RequestSetData(0.1f, 0.1f, Piano.getLivelliPercentual(), Piano.getLivelliPercentualVIP(), !Piano.getRecensione(), Piano.getPrenotazione(), Piano.getVantaggioCoupon(), Piano.getVantaggioModuloReffeal());
 
                     }
+
+                    //Aggiorno sul database ed in locale i dati
+                    /*Piano.livelli.RequestSetData();
+                    Piano.livelli.RequestCurrentData();*/
+
+                    ScontoActive = !(Piano.getPuntiPercentual() == 0.0f && Piano.getPuntiPercentualVIP() == 0.0f);
                 }
             }
 
             //Recensione
             else if (i == 3) Piano.RequestSetData(Piano.getPuntiPercentual(), Piano.getPuntiPercentualVIP(), Piano.getLivelliPercentual(), Piano.getLivelliPercentualVIP(), !Piano.getRecensione(), Piano.getPrenotazione(), Piano.getVantaggioCoupon(), Piano.getVantaggioModuloReffeal());
 
-                //Prenotazione
+            //Prenotazione
             else if (i == 4) Piano.RequestSetData(Piano.getPuntiPercentual(), Piano.getPuntiPercentualVIP(), Piano.getLivelliPercentual(), Piano.getLivelliPercentualVIP(), Piano.getRecensione(), !Piano.getPrenotazione(), Piano.getVantaggioCoupon(), Piano.getVantaggioModuloReffeal());
 
-                //Coupon
+            //Coupon
             else if (i == 5) Piano.RequestSetData(Piano.getPuntiPercentual(), Piano.getPuntiPercentualVIP(), Piano.getLivelliPercentual(), Piano.getLivelliPercentualVIP(), Piano.getRecensione(), Piano.getPrenotazione(), !Piano.getVantaggioCoupon(), Piano.getVantaggioModuloReffeal());
 
-                //ModuloReffeal
+            //ModuloReffeal
             else if (i == 6) Piano.RequestSetData(Piano.getPuntiPercentual(), Piano.getPuntiPercentualVIP(), Piano.getLivelliPercentual(), Piano.getLivelliPercentualVIP(), Piano.getRecensione(), Piano.getPrenotazione(), Piano.getVantaggioCoupon(), !Piano.getVantaggioModuloReffeal());
         }
     }
@@ -611,7 +708,6 @@ public class UI {
             else if(i == 5) UI.ResetPassword();
         }
     }
-
     public static void AccountUtente(){
 
         int i, r;
@@ -631,7 +727,6 @@ public class UI {
             else if(i == 3) UI.ResetPassword();
         }
     }
-
     public static void AccountDipendente(){
 
         int i, r;

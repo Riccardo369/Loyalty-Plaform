@@ -1,18 +1,17 @@
 public class Utente extends Character {
 
-    protected String Nome;
-    protected String Cognome;
-    protected String NumeroDiTelefono;
-    protected boolean StatoVIP;
-    protected String CodiceCarta;
-    protected String Città;
-    protected int Età;
-    protected String Regione;
-    protected String Comune;
-    protected boolean Sesso;
-    protected boolean ConsensoDati;
-
-    protected String Nickname;
+    private String Nome;
+    private String Cognome;
+    private String NumeroDiTelefono;
+    private boolean StatoVIP;
+    private String CodiceCarta;
+    private String Città;
+    private int Età;
+    private String Regione;
+    private String Comune;
+    private boolean Sesso;
+    private boolean ConsensoDati;
+    private String Nickname;
 
     public Utente(String Nickname, String Password) {
         if(!this.RequestGetCurrentData(Nickname, Password)) throw new IllegalArgumentException();

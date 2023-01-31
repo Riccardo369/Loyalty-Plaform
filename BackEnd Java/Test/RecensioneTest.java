@@ -14,8 +14,7 @@ public class RecensioneTest extends CreateNewNames {
     @BeforeEach
     public final void PreTest(){
 
-        assertEquals(GeneralManagement.AddPianoFedeltà(PartiteIVA[0], 0.0f, 0.0f, 0.0f, 0.0f, true, false, false, false), true);
-        assertEquals(GeneralManagement.AddPianoFedeltà(PartiteIVA[1], 0.0f, 0.0f, 0.0f, 0.0f, false, false, false, false), true);
+        assertEquals(GeneralManagement.AddAzienda("nome1", PartiteIVA[0], "Pass1", "Sito1", "Email1"), true);
 
         assertEquals(GeneralManagement.AddUtente("nome1", "cognome1", 1, "regione1", "città1", "comune1", false, "email1", "numero1", Nicknames[0], "pass1", true, "codice1", false), true);
     }
@@ -23,8 +22,7 @@ public class RecensioneTest extends CreateNewNames {
     @AfterEach
     public final void PostTest(){
 
-        assertEquals(GeneralManagement.RemovePianoFedeltà(PartiteIVA[0]), true);
-        assertEquals(GeneralManagement.RemovePianoFedeltà(PartiteIVA[1]), true);
+        assertEquals(GeneralManagement.RemoveAzienda(PartiteIVA[0], "Pass1"), true);
 
         assertEquals(GeneralManagement.RemoveUtente(Nicknames[0], "pass1"), true);
 
@@ -45,7 +43,7 @@ public class RecensioneTest extends CreateNewNames {
         assertEquals(GeneralManagement.AddRecensioneSito(PartiteIVA[0], Nicknames[0], "Descrizione1", 4.3f, tempo), true);
 
         //Creare non possibilità recensione (Fallimento)
-        assertEquals(GeneralManagement.AddRecensioneSito(PartiteIVA[1], Nicknames[0], "Descrizione1", 4.3f, tempo), false);
+        assertEquals(GeneralManagement.AddRecensioneSito(PartiteIVA[0], Nicknames[0], "Descrizione1", 4.3f, tempo), false);
 
         //Ridare (Successo)
         Recensione recensione = GeneralManagement.GetRecensioneSito(PartiteIVA[0], Nicknames[0]);

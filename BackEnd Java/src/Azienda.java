@@ -1,9 +1,8 @@
 class Azienda extends Character {
 
-	protected String NomeAzienda;
-	protected String SitoWeb;
-
-	protected String PartitaIVA;
+	private String NomeAzienda;
+	private String SitoWeb;
+	private String PartitaIVA;
 
 	//Accesso con richiesta della PartitaIVA e Password
 	protected Azienda(String PartitaIVA, String Password) throws IllegalArgumentException{
@@ -62,7 +61,9 @@ class Azienda extends Character {
 		}
 
 		//Modifico sia i dati di questa azienda, e sia le partite IVA di tutti gli elementi associati all' azienda (Dipendenti, Coupon, MoudliReffeal, ...)
-		UserDatabaseRequest.SendRequest("update azienda set "+Requests+" where PartitaIVA = '"+this.PartitaIVA+"'");
+		UserDatabaseRequest.SendTransaction(new String[]{"update azienda set "+Requests+" where PartitaIVA = '"+this.PartitaIVA+"'",
+				"update piano_vantaggi set PartitaIVAStart = '"+PartitaIVA+"' where PartitaIVAStart = '"+this.PartitaIVA+"'",
+				"update piano_vantaggi set PartitaIVAFinish = '"+PartitaIVA+"' where PartitaIVAFinish = '"+this.PartitaIVA+"'"});
 
 		if(UserDatabaseRequest.GetLastExecuteDone()){
 			this.NomeAzienda = NomeAzienda;

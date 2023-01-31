@@ -112,23 +112,8 @@ public class PianoVantaggiTest extends  CreateNewNames{
     }
 
 
-
-
     @Test
     public final void DestryoCollaborazioniTest(){
-
-        UserDatabaseRequest.SendRequest("insert into piano_vantaggi (PartitaIVAStart, PartitaIVAFinish, PuntiPercentual, PuntiPercentualVIP, PuntiLivelloPercentual, PuntiLivelloPercentualVIP, Recensione, Prenotazione, Coupon, ModuloReffeal, PercentualBase, Scadenza) VALUES " +
-                "('"+PartiteIVA[0]+"', '"+PartiteIVA[1]+"', 0.0, 0.0, 0.0, 0.0, false, false, false, false, 0.0, '2018-01-01 00:00:00.0'), " +
-                "('"+PartiteIVA[1]+"', '"+PartiteIVA[0]+"', 0.0, 0.0, 0.0, 0.0, false, false, false, false, 0.0, '2030-01-01 00:00:00.0')");
-
-        assertEquals(GeneralManagement.DestroyCollaborazioniScadute(), true);
-
-        DatabaseQuery[] Responses = UserDatabaseRequest.SendTransaction(new String[]{
-                "select * from piano_vantaggi where PartitaIVAStart = '"+PartiteIVA[0]+"' and PartitaIVAFinish = '"+PartiteIVA[1]+"'",
-                "select * from piano_vantaggi where PartitaIVAStart = '"+PartiteIVA[1]+"' and PartitaIVAFinish = '"+PartiteIVA[0]+"'"});
-
-        assertEquals(Responses[0].GetRowCount(), 0);
-        assertEquals(Responses[1].GetRowCount(), 1);
 
         UserDatabaseRequest.SendTransaction(new String[]{"insert into piano_vantaggi (PartitaIVAStart, PartitaIVAFinish, PuntiPercentual, PuntiPercentualVIP, PuntiLivelloPercentual, PuntiLivelloPercentualVIP, Recensione, Prenotazione, Coupon, ModuloReffeal, PercentualBase, Scadenza) VALUES " +
                 "('"+PartiteIVA[0]+"', '"+PartiteIVA[1]+"', 0.0, 0.0, 0.0, 0.0, false, false, false, false, 0.0, '2018-01-01 00:00:00.0')",

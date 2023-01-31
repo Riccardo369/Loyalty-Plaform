@@ -1,11 +1,10 @@
 public class Dipendente extends Character {
 
-    protected String Nome;
-    protected String Cognome;
-    protected String NumeroDiTelefono;
-
-    protected String PartitaIVA;
-    protected String CodiceDipendente;
+    private String Nome;
+    private String Cognome;
+    private String NumeroDiTelefono;
+    private String PartitaIVA;
+    private String CodiceDipendente;
 
     public Dipendente(String CodiceDipendente, String PartitaIVA, String Password){
         if(!this.RequestGetCurrentData(CodiceDipendente, PartitaIVA, Password)) throw new IllegalArgumentException();
